@@ -1,9 +1,11 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(5)
 print("Loaded!")
+
 local ws = game:GetService("Workspace")
 local rs = game:GetService("ReplicatedStorage")
 local ts = game:GetService("TweenService")
+local Http = game:GetService("HttpService")
 local CommF = rs.Remotes.CommF_
 
 --player instances
@@ -11,13 +13,6 @@ local plr = game:GetService("Players").LocalPlayer
 local chr = plr.Character
 local hrp = chr:WaitForChild("HumanoidRootPart")
 local hum = chr:FindFirstChildOfClass("Humanoid")
-
-local function SendNotification(Title, Text)
-	game:GetService("StarterGui"):SetCore("SendNotification", {
-		Title = Title;
-		Text = Text
-	})
-end
 
 task.wait(2.5)
 local PlaceID = game.PlaceId
@@ -28,9 +23,9 @@ local Deleted = false
 function TPReturner()
 	local Site;
 	if foundAnything == "" then
-		Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+		Site = Http:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
 	else
-		Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+		Site = Http:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
 	end
 	local ID = ""
 	if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
@@ -61,7 +56,7 @@ function TPReturner()
 				table.insert(AllIDs, ID)
 				task.wait()
 				pcall(function()
-					writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+					writefile("NotSameServers.json", Http:JSONEncode(AllIDs))
 					task.wait()
 					game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
 				end)
@@ -70,6 +65,9 @@ function TPReturner()
 		end
 	end
 end
+
+
+-----[Functions]-----
 
 function Teleport()
 	while task.wait() do
@@ -81,41 +79,73 @@ function Teleport()
 		end)
 	end
 end
+
+local function SendNotification(Title, Text)
+	game:GetService("StarterGui"):SetCore("SendNotification", {
+		Title = Title;
+		Text = Text
+	})
+end
+
+local function SendPost(desc)
+	if _G.WebHook == "" or nil then return end
+	local response = syn.request(
+		{
+			Url = _G.WebHook,
+			Method = 'POST',
+			Headers = {
+				['Content-Type'] = "application/json"
+			},
+			Body = Http:JSONEncode({
+				['content'] = "",
+				['embeds'] = {{
+					['title'] = "Fruit Finder",
+					["description"] = desc,
+					["type"] = "rich",
+					["color"] = tonumber(0x7A067C),
+				}}
+			})
+		})
+end
+
+
+--[Game Variables]--
+
 local GUI = plr.PlayerGui:WaitForChild("Main")
 local CT = GUI:WaitForChild("ChooseTeam")
 local GM = require(game.ReplicatedStorage:WaitForChild("GuideModule"))
 local SideCompass = GM.SideCompass
 local Noti = require(game.ReplicatedStorage:WaitForChild("Notification"))
 local cam = ws.CurrentCamera
-local u85 = false
-local v2 = _G.CurrentWorld == "Main"
+local TeamAlready = false
+local Main = _G.CurrentWorld == "Main"
 local UIS = game:GetService("UserInputService");
-local v173 = game:GetService("GuiService"):IsTenFootInterface() and UIS.GamepadEnabled
-TE = UIS.TouchEnabled
+local GSGE = game:GetService("GuiService"):IsTenFootInterface() and UIS.GamepadEnabled
+local TE = UIS.TouchEnabled
 
-local u84 = false;
+local Var1 = false;
 UIS.GamepadConnected:Connect(function()
 	Noti.new("<Color=Green>Xbox mode activated (Gamepad).<Color=/>"):Display();
-	if u84 then
+	if Var1 then
 		return;
 	end;
 end);
 
-local function u88(team)
-	if u85 then
+local function Choose(team)
+	if TeamAlready then
 		return;
 	end;
-	u85 = true;
+	TeamAlready = true;
 	Noti.new("Joining..."):Display();
-	local v458, v459 = pcall(function()
+	local Success, Error = pcall(function()
 		CommF:InvokeServer("SetTeam", team);
 	end);
-	if not v458 then
-		u85 = false;
+	if not Success then
+		TeamAlready = false;
 		Noti.new("<Color=Red>Player data still not ready, please wait and try again.<Color=/>"):Display();
 		return;
 	end;
-	u84 = true;
+	Var1 = true;
 	if TE and UIS.MouseEnabled == false then
 		GUI.Level.Position = UDim2.new(0, 6, 0.71, 0);
 		GUI.Beli.Position = UDim2.new(0, 6, 0.93, 0);
@@ -124,7 +154,7 @@ local function u88(team)
 		GUI.Energy.Position = UDim2.new(0.505, 1, 0.93, -70);
 		GUI.RaceEnergy.Position = UDim2.new(0, 10, 0.815, 0);
 		GUI.DodgeNotifier.Position = UDim2.new(0.5, 0, 0.95, -85);
-	elseif v173 then
+	elseif GSGE then
 		GUI.Fragments.Position = UDim2.new(0, 6, 0, 0);
 	end;
 	if UIS.GamepadEnabled then
@@ -136,7 +166,7 @@ local function u88(team)
 	CT.Visible = false;
 	CT:Destroy();
 	Noti.new("Joined <" .. team .. "> team."):Display();
-	cam.CameraType = "Custom";
+	cam.CameraType = Enum.CameraType.Custom;
 	cam.CameraSubject = hum;
 	GUI.MenuButton.Visible = true;
 	GUI.Beli.Visible = true;
@@ -163,7 +193,7 @@ local function u88(team)
 		GUI.HomeButton.Position = GUI.CrewButton.Position + UDim2.new(0, 30, 0, 0);
 		GUI.AlliesButton.Position = GUI.CrewButton.Position + UDim2.new(0, 0, 0, 0);
 	end;
-	if v2 then
+	if Main then
 		spawn(function()
 			while true do
 				local v460 = pcall(function()
@@ -178,35 +208,10 @@ local function u88(team)
 	end;
 end;
 repeat task.wait() until game:IsLoaded()
-task.wait(2.5)
-u88("Pirates")
-task.wait(1)
+Choose("Pirates")
 game.Players.LocalPlayer.Character.Humanoid:TakeDamage(math.huge)
-task.wait(7.5)
+task.wait(8.5)
 SendNotification("Fruit Finder", "Loaded!")
-
-local Http = game:GetService("HttpService")
-
-local function SendPost(desc)
-	if _G.WebHook == "" or nil then return end
-	local response = syn.request(
-		{
-			Url = _G.WebHook,
-			Method = 'POST',
-			Headers = {
-				['Content-Type'] = "application/json"
-			},
-			Body = Http:JSONEncode({
-				['content'] = "",
-				['embeds'] = {{
-					['title'] = "Fruit Finder",
-					["description"] = desc,
-					["type"] = "rich",
-					["color"] = tonumber(0x7A067C),
-				}}
-			})
-		})
-end
 
 task.spawn(function()
 	for i, dropfruit in pairs(ws:GetChildren()) do
@@ -221,10 +226,9 @@ task.spawn(function()
 							break
 						end
 						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
-						coroutine.wrap(function()
- 							hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .1)
-						end)()
-						print("Lerping.")
+						task.spawn(function()
+							hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .1)
+						end)
 						task.spawn(function()
 							if Magnitude <= 1 then
 								hrp.Anchored = false
@@ -241,6 +245,7 @@ task.spawn(function()
 					SendNotification("Fruit Finder", "Stored Fruit!")
 					local FruitName = dropfruit.Name:split(' ')
 					CommF:InvokeServer("StoreFruit", FruitName[1].."-"..FruitName[1], tostring(dropfruit))
+					task.wait(2.5)
 				end
 			end
 		end
