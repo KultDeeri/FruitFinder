@@ -97,7 +97,7 @@ local function SendPost(desc)
 					['title'] = "Fruit Finder",
 					["description"] = desc,
 					["type"] = "rich",
-					["color"] = tonumber(0xffffff),
+					["color"] = tonumber(0x7A067C),
 				}}
 			})
 		})
@@ -203,7 +203,6 @@ u88("Pirates")
 task.wait(1)
 game.Players.LocalPlayer.Character.Humanoid:TakeDamage(math.huge)
 task.wait(7.5)
-SendPost("Fruit Finder Loaded, Made by KultDeeri.")
 SendNotification("Fruit Finder", "Loaded!")
 
 task.spawn(function()
