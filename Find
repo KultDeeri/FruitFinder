@@ -1,0 +1,240 @@
+local ws = game:GetService("Workspace")
+local rs = game:GetService("ReplicatedStorage")
+local ts = game:GetService("TweenService")
+local CommF = rs.Remotes.CommF_
+
+--player instances
+local plr = game:GetService("Players").LocalPlayer
+local chr = plr.Character
+local hrp = chr:WaitForChild("HumanoidRootPart")
+local hum = chr:FindFirstChildOfClass("Humanoid")
+
+local function SendNotification(Title, Text)
+	game:GetService("StarterGui"):SetCore("SendNotification", {
+		Title = Title;
+		Text = Text
+	})
+end
+
+repeat task.wait() until game:IsLoaded()
+
+task.wait(2.5)
+local PlaceID = game.PlaceId
+local AllIDs = {}
+local foundAnything = ""
+local actualHour = os.date("!*t").hour
+local Deleted = false
+function TPReturner()
+	local Site;
+	if foundAnything == "" then
+		Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+	else
+		Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+	end
+	local ID = ""
+	if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+		foundAnything = Site.nextPageCursor
+	end
+	local num = 0;
+	for i,v in pairs(Site.data) do
+		local Possible = true
+		ID = tostring(v.id)
+		if tonumber(v.maxPlayers) > tonumber(v.playing) then
+			for _,Existing in pairs(AllIDs) do
+				if num ~= 0 then
+					if ID == tostring(Existing) then
+						Possible = false
+					end
+				else
+					if tonumber(actualHour) ~= tonumber(Existing) then
+						local delFile = pcall(function()
+							delfile("NotSameServers.json")
+							AllIDs = {}
+							table.insert(AllIDs, actualHour)
+						end)
+					end
+				end
+				num = num + 1
+			end
+			if Possible == true then
+				table.insert(AllIDs, ID)
+				task.wait()
+				pcall(function()
+					writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+					task.wait()
+					game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+				end)
+				task.wait(4)
+			end
+		end
+	end
+end
+
+function Teleport()
+	while task.wait() do
+		pcall(function()
+			TPReturner()
+			if foundAnything ~= "" then
+				TPReturner()
+			end
+		end)
+	end
+end
+local Http = game:GetService("HttpService")
+
+local function SendPost(desc)
+	if _G.WebHook == "" or nil then return end
+	local response = syn.request(
+		{
+			Url = _G.WebHook,
+			Method = 'POST',
+			Headers = {
+				['Content-Type'] = "application/json"
+			},
+			Body = Http:JSONEncode({
+				['content'] = "",
+				['embeds'] = {{
+					['title'] = "Fruit Finder",
+					["description"] = desc,
+					["type"] = "rich",
+					["color"] = tonumber(0xffffff),
+				}}
+			})
+		})
+end
+
+local GUI = plr.PlayerGui:WaitForChild("Main")
+local CT = GUI:WaitForChild("ChooseTeam")
+local GM = require(game.ReplicatedStorage:WaitForChild("GuideModule"))
+local SideCompass = GM.SideCompass
+local Noti = require(game.ReplicatedStorage:WaitForChild("Notification"))
+local cam = ws.CurrentCamera
+local u85 = false
+local v2 = _G.CurrentWorld == "Main"
+local UIS = game:GetService("UserInputService");
+local v173 = game:GetService("GuiService"):IsTenFootInterface() and UIS.GamepadEnabled
+TE = UIS.TouchEnabled
+
+local u84 = false;
+UIS.GamepadConnected:Connect(function()
+	Noti.new("<Color=Green>Xbox mode activated (Gamepad).<Color=/>"):Display();
+	if u84 then
+		return;
+	end;
+end);
+
+local function u88(team)
+	if u85 then
+		return;
+	end;
+	u85 = true;
+	Noti.new("Joining..."):Display();
+	local v458, v459 = pcall(function()
+		CommF:InvokeServer("SetTeam", team);
+	end);
+	if not v458 then
+		u85 = false;
+		Noti.new("<Color=Red>Player data still not ready, please wait and try again.<Color=/>"):Display();
+		return;
+	end;
+	u84 = true;
+	if TE and UIS.MouseEnabled == false then
+		GUI.Level.Position = UDim2.new(0, 6, 0.71, 0);
+		GUI.Beli.Position = UDim2.new(0, 6, 0.93, 0);
+		GUI.Fragments.Position = UDim2.new(0, 6, 0.8700000000000001, 0);
+		GUI.HP.Position = UDim2.new(0.305, -1, 0.93, -70);
+		GUI.Energy.Position = UDim2.new(0.505, 1, 0.93, -70);
+		GUI.RaceEnergy.Position = UDim2.new(0, 10, 0.815, 0);
+		GUI.DodgeNotifier.Position = UDim2.new(0.5, 0, 0.95, -85);
+	elseif v173 then
+		GUI.Fragments.Position = UDim2.new(0, 6, 0, 0);
+	end;
+	if UIS.GamepadEnabled then
+		Noti.new("<Color=Green>Xbox mode activated (Gamepad).<Color=/>"):Display();
+		task.defer(function()
+			UIS:SetNavigationGamepad(Enum.UserInputType.Gamepad1, true);
+		end);
+	end;
+	CT.Visible = false;
+	CT:Destroy();
+	Noti.new("Joined <" .. team .. "> team."):Display();
+	cam.CameraType = "Custom";
+	cam.CameraSubject = hum;
+	GUI.MenuButton.Visible = true;
+	GUI.Beli.Visible = true;
+	GUI.Level.Visible = true;
+	GUI.HP.Visible = true;
+	GUI.Energy.Visible = true;
+	GUI.Mute.Visible = true;
+	GUI.Code.Visible = true;
+	GUI.Settings.Visible = true;
+	GUI.Fragments.Visible = true;
+	GUI:WaitForChild("AlliesButton").Visible = true;
+	GUI:WaitForChild("HomeButton").Visible = true;
+	SideCompass.Visible = true;
+	if plr.Team == game.Teams.Pirates then
+		GUI.CrewButton.Visible = true;
+		GUI.Crew.Visible = true;
+		GUI.Code.Position = GUI.CrewButton.Position + UDim2.new(0, 90, 0, 0);
+		GUI.HomeButton.Position = GUI.CrewButton.Position + UDim2.new(0, 60, 0, 0);
+		GUI.AlliesButton.Position = GUI.CrewButton.Position + UDim2.new(0, 30, 0, 0);
+	else
+		GUI.CrewButton.Visible = false;
+		GUI.Crew.Visible = false;
+		GUI.Code.Position = GUI.CrewButton.Position + UDim2.new(0, 60, 0, 0);
+		GUI.HomeButton.Position = GUI.CrewButton.Position + UDim2.new(0, 30, 0, 0);
+		GUI.AlliesButton.Position = GUI.CrewButton.Position + UDim2.new(0, 0, 0, 0);
+	end;
+	if v2 then
+		spawn(function()
+			while true do
+				local v460 = pcall(function()
+					game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true);
+				end);
+				wait();
+				if v460 then
+					break;
+				end;			
+			end;
+		end);
+	end;
+end;
+u88("Pirates")
+task.wait(1)
+game.Players.LocalPlayer.Character.Humanoid:TakeDamage(math.huge)
+task.wait(7.5)
+SendPost("Fruit Finder Loaded, Made by KultDeeri.")
+SendNotification("Fruit Finder", "Loaded!")
+
+task.spawn(function()
+	for i, dropfruit in pairs(ws:GetChildren()) do
+		if dropfruit:IsA("Tool") and tostring(dropfruit):find("Fruit") then
+			for i,tablefruit in pairs(_G.AllowedFruits) do
+				if tablefruit == dropfruit.Name or dropfruit.Name == "Fruit" then
+					SendNotification("Fruit Finder","Found "..tostring(dropfruit).."!")
+					local DHandle = dropfruit:WaitForChild("Handle")
+					hrp.Anchored = true
+					repeat task.wait()
+						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
+						print(Magnitude)
+						hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .015)
+						task.spawn(function()
+							if Magnitude <= 1 then
+								hrp.Anchored = false
+							else
+								hrp.Anchored = true
+							end
+						end)
+					until hrp.CFrame == DHandle.CFrame or chr:FindFirstChild(tostring(dropfruit))
+					hrp.Anchored = false
+					SendPost("Stored "..tostring(dropfruit))
+					SendNotification("Fruit Finder", "Stored Fruit!")
+					local FruitName = dropfruit.Name:split(' ')
+					CommF:InvokeServer("StoreFruit", FruitName[1].."-"..FruitName[1], tostring(dropfruit))
+				end
+			end
+		end
+	end
+	SendNotification("Fruit Finder", "No Fruit Detected.")
+	Teleport()
+end)
