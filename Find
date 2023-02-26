@@ -221,7 +221,9 @@ task.spawn(function()
 							break
 						end
 						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
-						hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .015)
+						task.spawn(function()
+							chr:WaitForChild("HumnaoidRootPart").CFrame = chr:WaitForChild("HumnaoidRootPart").CFrame:Lerp(DHandle.CFrame, .015)
+						end)
 						print("Lerping.")
 						task.spawn(function()
 							if Magnitude <= 1 then
