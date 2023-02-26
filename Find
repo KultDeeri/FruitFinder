@@ -221,9 +221,9 @@ task.spawn(function()
 							break
 						end
 						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
-						task.spawn(function()
-							hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .015)
-						end)
+						coroutine.wrap(function()
+ 							hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .1)
+						end)()
 						print("Lerping.")
 						task.spawn(function()
 							if Magnitude <= 1 then
