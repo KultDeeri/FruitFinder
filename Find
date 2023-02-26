@@ -81,30 +81,6 @@ function Teleport()
 		end)
 	end
 end
-local Http = game:GetService("HttpService")
-
-local function SendPost(desc)
-	if _G.WebHook == "" or nil then return end
-	local response = syn.request(
-		{
-			Url = _G.WebHook,
-			Method = 'POST',
-			Headers = {
-				['Content-Type'] = "application/json"
-			},
-			Body = Http:JSONEncode({
-				['content'] = "",
-				['embeds'] = {{
-					['title'] = "Fruit Finder",
-					["description"] = desc,
-					["type"] = "rich",
-					["color"] = tonumber(0x7A067C),
-				}}
-			})
-		})
-end
-repeat task.wait() until game:IsLoaded()
-
 local GUI = plr.PlayerGui:WaitForChild("Main")
 local CT = GUI:WaitForChild("ChooseTeam")
 local GM = require(game.ReplicatedStorage:WaitForChild("GuideModule"))
@@ -209,8 +185,29 @@ game.Players.LocalPlayer.Character.Humanoid:TakeDamage(math.huge)
 task.wait(7.5)
 SendNotification("Fruit Finder", "Loaded!")
 
-repeat task.wait() until game:IsLoaded()
-task.wait(2.5)
+local Http = game:GetService("HttpService")
+
+local function SendPost(desc)
+	if _G.WebHook == "" or nil then return end
+	local response = syn.request(
+		{
+			Url = _G.WebHook,
+			Method = 'POST',
+			Headers = {
+				['Content-Type'] = "application/json"
+			},
+			Body = Http:JSONEncode({
+				['content'] = "",
+				['embeds'] = {{
+					['title'] = "Fruit Finder",
+					["description"] = desc,
+					["type"] = "rich",
+					["color"] = tonumber(0x7A067C),
+				}}
+			})
+		})
+end
+
 task.spawn(function()
 	for i, dropfruit in pairs(ws:GetChildren()) do
 		if dropfruit:IsA("Tool") and tostring(dropfruit):find("Fruit") then
@@ -225,6 +222,7 @@ task.spawn(function()
 						end
 						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
 						hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .015)
+						print("Lerping.")
 						task.spawn(function()
 							if Magnitude <= 1 then
 								hrp.Anchored = false
