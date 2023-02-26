@@ -216,14 +216,13 @@ task.spawn(function()
 					SendNotification("Fruit Finder","Found "..tostring(dropfruit).."!")
 					local DHandle = dropfruit:WaitForChild("Handle")
 					hrp.Anchored = true
-					local hrp2 = ws:WaitForChild("Characters"):WaitForChild(plr.Name):WaitForChild("HumanoidRootPart")
 					repeat task.wait()
 						if dropfruit.Parent ~= ws then
 							break
 						end
 						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
 						task.spawn(function()
-							hrp2.CFrame = hrp2.CFrame:Lerp(DHandle.CFrame, .015)
+							hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .015)
 						end)
 						print("Lerping.")
 						task.spawn(function()
@@ -233,7 +232,7 @@ task.spawn(function()
 								hrp.Anchored = true
 							end
 						end)
-					until hrp2.CFrame == DHandle.CFrame or chr:FindFirstChild(tostring(dropfruit))
+					until hrp.CFrame == DHandle.CFrame or chr:FindFirstChild(tostring(dropfruit))
 					hrp.Anchored = false
 					if not chr:FindFirstChild(tostring(dropfruit)) then
 						break
