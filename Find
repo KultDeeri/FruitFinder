@@ -103,7 +103,7 @@ local function SendPost(desc)
 			})
 		})
 end
-
+repeat task.wait() until game:IsLoaded()
 local GUI = plr.PlayerGui:WaitForChild("Main")
 local CT = GUI:WaitForChild("ChooseTeam")
 local GM = require(game.ReplicatedStorage:WaitForChild("GuideModule"))
@@ -200,12 +200,14 @@ local function u88(team)
 		end);
 	end;
 end;
+repeat task.wait() until game:IsLoaded()
 u88("Pirates")
 task.wait(1)
 game.Players.LocalPlayer.Character.Humanoid:TakeDamage(math.huge)
 task.wait(7.5)
 SendNotification("Fruit Finder", "Loaded!")
 
+repeat task.wait() until game:IsLoaded()
 task.spawn(function()
 	for i, dropfruit in pairs(ws:GetChildren()) do
 		if dropfruit:IsA("Tool") and tostring(dropfruit):find("Fruit") then
