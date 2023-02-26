@@ -224,7 +224,6 @@ task.spawn(function()
 							break
 						end
 						local Magnitude = (hrp.Position - DHandle.Position).Magnitude
-						print(Magnitude)
 						hrp.CFrame = hrp.CFrame:Lerp(DHandle.CFrame, .015)
 						task.spawn(function()
 							if Magnitude <= 1 then
@@ -234,10 +233,10 @@ task.spawn(function()
 							end
 						end)
 					until hrp.CFrame == DHandle.CFrame or chr:FindFirstChild(tostring(dropfruit))
+					hrp.Anchored = false
 					if not chr:FindFirstChild(tostring(dropfruit)) then
 						break
 					end
-					hrp.Anchored = false
 					SendPost("Stored "..tostring(dropfruit))
 					SendNotification("Fruit Finder", "Stored Fruit!")
 					local FruitName = dropfruit.Name:split(' ')
