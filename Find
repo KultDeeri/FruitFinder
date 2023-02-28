@@ -1,6 +1,10 @@
-repeat task.wait() until game:IsLoaded()
-task.wait(5)
-print("Loaded!")
+repeat task.wait(1) until game.IsLoaded and (game.Players.LocalPlayer or game.Players.PlayerAdded:Wait()) and (game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait())
+if Ran then 
+	return
+else
+	getgenv().Ran = true
+end
+print('Loaded!')
 local PlaceID = game.PlaceId
 local AllIDs = {}
 local foundAnything = ""
@@ -51,23 +55,10 @@ function TPReturner()
 		end
 	end
 end
----[Variables]---
-
-local HTTP = game:GetService("HttpService")
-local WS = game:GetService("Workspace")
-local RS = game:GetService("ReplicatedStorage")
-local TS, TInfo = game:GetService("TweenService"), TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
-local Camera = WS:WaitForChild("Camera")
-local CommF = RS.Remotes.CommF_
-
---Player Variables--
-
-local plr = game:GetService("Players").LocalPlayer
-local chr = plr.Character or plr.CharacterAdded:Wait()
-local hrp = chr:WaitForChild("HumanoidRootPart")
-local hum = chr:WaitForChild("Humanoid")
 
 ---[Functions]---
+
+local HTTP = game:GetService("HttpService")
 
 function Teleport()
 	while task.wait() do
@@ -108,7 +99,20 @@ local function SendPost(desc)
 		})
 end
 
+task.wait(5)
 ---[AutoTeam]---
+
+local HTTP = game:GetService("HttpService")
+local WS = game:GetService("Workspace")
+local RS = game:GetService("ReplicatedStorage")
+local TS, TInfo = game:GetService("TweenService"), TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+local Camera = WS:WaitForChild("Camera")
+local CommF = RS.Remotes.CommF_
+
+local plr = game:GetService("Players").LocalPlayer
+local chr = plr.Character or plr.CharacterAdded:Wait()
+local hrp = chr:WaitForChild("HumanoidRootPart")
+local hum = chr:WaitForChild("Humanoid")
 
 local Main = plr.PlayerGui:WaitForChild("Main")
 local CT = Main:WaitForChild("ChooseTeam")
@@ -138,47 +142,63 @@ Main.Crew.Visible = true
 Main.Code.Position = Main.CrewButton.Position + UDim2.new(0, 90, 0, 0)
 Main.HomeButton.Position = Main.CrewButton.Position + UDim2.new(0, 60, 0, 0)
 Main.AlliesButton.Position = Main.CrewButton.Position + UDim2.new(0, 30, 0, 0)
-task.wait(2.5)
+
+local plr = game.Players.LocalPlayer
+local chr = plr.Character
+local t = game.TweenService
+
+local bv = Instance.new("BodyVelocity")
+bv.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+bv.Velocity = Vector3.new()
+bv.Name = "bV"
+local bav = Instance.new("BodyAngularVelocity")
+bav.AngularVelocity = Vector3.new()
+bav.MaxTorque = Vector3.new(1/0, 1/0, 1/0)
+bav.Name = "bAV" 
 
 SendNotification("Loaded!")
 
-task.spawn(function()
-	for _, Fruit in pairs(WS:GetChildren()) do
-		if Fruit:IsA("Tool") and Fruit.Name:find("Fruit") then
-			for _, FruitsTable in pairs(_G.AllowedFruits) do
-				if FruitsTable == Fruit.Name then
-					local FruitHandle = Fruit:WaitForChild("Handle")
-					hrp.Anchored = true
-					SendNotification("Found "..Fruit.Name.."!")
-
-					repeat task.wait()
-						if Fruit.Parent ~= WS then break end
-						hrp.Anchored = true
-						TS:Create(hrp, TInfo, {CFrame = CFrame.new(FruitHandle.Position, hrp.Position)}):Play()
-						task.spawn(function()
-							local Dist = (hrp.Position - FruitHandle.Position).Magnitude
-							if Dist <= 1 then
-								hrp.Anchored = false
-							else
-								hrp.Anchored = true
-							end
-						end)
-					until hrp.Position == FruitHandle.Position or chr:FindFirstChild(Fruit.Name)
-					hrp.Anchored = false
-					if not chr:FindFirstChild(Fruit.Name) then break end
-					local FruitName = Fruit.Name:split(' ')
-					CommF:InvokeServer("StoreFruit", FruitName[1].."-"..FruitName[1], Fruit.Name)
-					
-					if not chr:FindFirstChild(Fruit.Name) or not plr.Backpack:FindFirstChild(Fruit.Name) then
-						SendPost("Stored "..Fruit.Name)
-						SendNotification("Stored Fruit!")
-					else return SendNotification("Failed to Store Fruit!") end
-					task.wait(2.5)
-				end
+local FruitsAllowed = _G.FruitsAllowed
+for _,v in next, workspace:GetChildren() do
+	if v.Name:find("Fruit") and (v:IsA("Tool") or v:IsA("Model")) then
+		for i,a in pairs(FruitsAllowed) do
+			if v.Name == a then
+				continue
+			else
+				return
 			end
 		end
+		SendNotification("Found Fruit!")
+		repeat 
+			local anc1 = bv:Clone()
+			anc1.Parent = chr.HumanoidRootPart
+			local anc2 = bav:Clone()
+			anc2.Parent = chr.HumanoidRootPart
+			local p = t:Create(chr.HumanoidRootPart, TweenInfo.new((plr:DistanceFromCharacter(v.Handle.Position)-100)/320, Enum.EasingStyle.Linear), {CFrame=v.Handle.CFrame + Vector3.new(0, v.Handle.Size.Y, 0)})
+			p:Play()
+			p.Completed:Wait()
+			chr.HumanoidRootPart.CFrame = v.Handle.CFrame
+			anc1:Destroy()
+			anc2:Destroy()
+			task.wait(1)
+		until v.Parent ~= workspace
+		task.wait(1)
+		local fruit = chr:FindFirstChildOfClass("Tool") and chr:FindFirstChildOfClass("Tool").Name:find("Fruit") and chr:FindFirstChildOfClass("Tool") or (function()
+			for _,fr in plr.Backpack:GetChildren() do
+				if fr.Name:find("Fruit") then
+					return fr
+				end 
+			end
+		end)()
+		game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", fruit:GetAttribute("OriginalName"), fruit)
+		task.wait(1)
+		if plr.BackPack.FindFirstChildOfClass(fruit) and plr.Character:FindFirstChildOfClass(fruit) then
+			return SendNotification('Failed to Store')
+		else
+			SendPost("Stored Fruit")
+		end
 	end
-	SendNotification("No Fruit Detected.")
-	task.wait(1)
-	Teleport()
-end)
+end
+SendNotification("No Fruit Detected.")
+task.wait(2.5)
+Teleport()
